@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import joblib
 
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
@@ -26,6 +27,7 @@ def run_linear_regression_baseline(
     file_path: str,
     target_col: str = "purchased",
     threshold: float = 0.5,
+    load_model: bool = False,   # 新增
 ):
     # 1. 读取并拆分数据
     X_train, X_test, y_train, y_test, df = load_and_prepare_data(
@@ -50,11 +52,19 @@ def run_linear_regression_baseline(
         ]
     )
 
-    #  train
-    print("\n" + "=" * 80)
-    print("TRAINING LINEAR REGRESSION BASELINE")
-    print("=" * 80)
-    model.fit(X_train, y_train)
+    if load_model:
+        print("\n" + "=" * 80)
+        print("\nLoading existing model ...")
+        model = joblib.load("linear_regression_model.pkl")
+    else:
+        #  train
+        print("\n" + "=" * 80)
+        print("TRAINING ... ")
+        model.fit(X_train, y_train)
+        # 保存模型
+        joblib.dump(model, "linear_regression_model.pkl")
+        print("\nModel saved as linear_regression_model.pkl")
+
 
     #  predict
     y_pred_continuous = model.predict(X_test)
@@ -171,7 +181,7 @@ def run_linear_regression_baseline(
 
 if __name__ == "__main__":
     FILE_PATH = r"F:\CIS5450\compressed_data.csv" 
-    run_linear_regression_baseline(FILE_PATH, target_col="purchased", threshold=0.5)
+    run_linear_regression_baseline(FILE_PATH, target_col="purchased", threshold=0.5, load_model=True)
 
 
 # We observed that total_events is a linear combination of total_views, total_carts, and total_purchases. 

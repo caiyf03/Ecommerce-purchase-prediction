@@ -142,3 +142,51 @@ print(["user_id", "total_purchases", "purchase_rate"])
 print("\n✔ 可以开始 baseline 模型（Logistic Regression）")
 print("cart_rate max:", df["cart_rate"].max())
 print("purchase_rate max:", df["purchase_rate"].max())
+
+print("=" * 80)
+print("CHECK PURCHASE vs HAS_CARTED")
+print("=" * 80)
+
+cross_tab = pd.crosstab(df["purchased"], df["has_carted"])
+print(cross_tab)
+
+print("\nNormalized by purchased:")
+print(pd.crosstab(df["purchased"], df["has_carted"], normalize="index"))
+
+bad_case = df[(df["purchased"] == 1) & (df["has_carted"] == 0)]
+print(f"\n# purchased=1 but has_carted=0: {len(bad_case)}")
+print("=" * 80)
+print("CHECK total_carts DISTRIBUTION")
+print("=" * 80)
+
+num_eq_0 = (df["total_carts"] == 0).sum()
+num_eq_1 = (df["total_carts"] == 1).sum()
+num_gt_1 = (df["total_carts"] > 1).sum()
+max_carts = df["total_carts"].max()
+
+print(f"total_carts == 0 : {num_eq_0}")
+print(f"total_carts == 1 : {num_eq_1}")
+print(f"total_carts >  1 : {num_gt_1}")
+print(f"max(total_carts) : {max_carts}")
+print("=" * 80)
+print("total_carts AMONG PURCHASED USERS")
+print("=" * 80)
+
+purchased_df = df[df["purchased"] == 1]
+
+num_eq_0_p = (purchased_df["total_carts"] == 0).sum()
+num_eq_1_p = (purchased_df["total_carts"] == 1).sum()
+num_gt_1_p = (purchased_df["total_carts"] > 1).sum()
+max_carts_p = purchased_df["total_carts"].max()
+
+print(f"[purchased=1] total_carts == 0 : {num_eq_0_p}")
+print(f"[purchased=1] total_carts == 1 : {num_eq_1_p}")
+print(f"[purchased=1] total_carts >  1 : {num_gt_1_p}")
+print(f"[purchased=1] max(total_carts) : {max_carts_p}")
+print("\nNormalized distribution for purchased=1:")
+print(
+    purchased_df["total_carts"]
+    .value_counts(normalize=True)
+    .sort_index()
+    .head(20)
+)
