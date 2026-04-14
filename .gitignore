@@ -4,3 +4,5 @@ data/raw/
 *.joblib
 __pycache__/
 .env
+*.parquet
+*.json

@@ -75,3 +75,6 @@ def print_split_summary(X_train, X_test, y_train, y_test):
     print()
     print(f"Train positive rate: {y_train.mean():.6f}")
     print(f"Test  positive rate: {y_test.mean():.6f}")
+    print("\nFeature columns:")
+    print(X_train.columns.tolist())
+    

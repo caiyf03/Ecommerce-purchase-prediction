@@ -1,3 +1,4 @@
+# basic information of the F:\CIS5450\compressed_data.csv
 import pandas as pd
 import numpy as np
 
