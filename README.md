@@ -1,346 +1,84 @@
-# **User-Level Purchase Prediction from E-Commerce Behavioral Logs**
+# E-Commerce Purchase Prediction
 
-## 1. Introduction
+A scalable pipeline for predicting user purchase behavior from large-scale e-commerce interaction logs.
 
-### 1.1 Problem Definition
+## 🚀 Overview
 
-In this project, we aim to predict whether a user will make a purchase based on their historical interaction behavior on an e-commerce platform. Formally, this is a binary classification problem at the user level, where the goal is to estimate whether a user will convert (i.e., make at least one purchase) within a given time window.
+This project builds a multi-stage data processing and modeling pipeline to predict whether a user will make a purchase based on historical behavior. It transforms raw event logs (~42M rows) into structured feature representations and trains machine learning models for classification.
 
-The prediction is constructed using large-scale behavioral logs that record user interactions such as product views, cart additions, and purchases.
+## 🧠 Key Idea
 
----
+We bridge the gap between sequential behavioral data and tabular models:
 
-### 1.2 Motivation
+Raw Event Logs → Event-Level Dataset → Feature Engineering → User-Level Dataset → Modeling
 
-Predicting user purchase behavior is a fundamental task in modern e-commerce systems. It directly supports:
+- Event-level data preserves full interaction sequences  
+- Feature engineering extracts rich behavioral signals  
+- User-level data provides model-ready representations  
 
-- Personalized recommendation systems  
-- Targeted advertising  
-- Customer retention strategies  
+## 📊 Dataset
 
-However, the task is challenging due to:
+We use the REES46 E-commerce Behavioral Dataset (October 2019), which contains ~42 million events and ~3 million users. Each event corresponds to a user interaction, including view, cart, remove_from_cart, and purchase.
 
-- Strong class imbalance (most users do not purchase)  
-- Sequential and heterogeneous user behavior  
-- Large-scale noisy real-world data  
+For convenience and reproducibility, the dataset is hosted on Hugging Face:  
+https://huggingface.co/datasets/skpy/E_Commerce_Behavioral_Analysis
 
----
+## 🏗️ Pipeline
 
-### 1.3 Approach Overview
+### 1. Event-Level Processing
 
-We design a **multi-stage data processing and modeling pipeline**:
+We construct a clean event-level dataset by parsing timestamps, handling missing values, extracting hierarchical categories, consolidating rare categories, and sorting events by user and time. This step preserves the full behavioral sequence without aggregation.
 
-Specifically:
+### 2. Event Feature Engineering
 
-1. Construct a clean **event-level dataset**  
-2. Build an intermediate **event-derived feature table**  
-3. Aggregate into a **user-level dataset**  
-4. Train classification models for prediction  
+We build an intermediate feature table (`event_feature_table_v3`) by aggregating and enriching event-level data. This step captures rich behavioral patterns, including:
 
----
+- Behavioral statistics (e.g., total events, number of products, number of sessions)  
+- Temporal dynamics (e.g., active duration, inter-event time gaps)  
+- Funnel behavior (view → cart → purchase transitions)  
+- Session structure (session length statistics)  
+- Category preference and diversity (top category, entropy)  
+- Repeated interest signals (repeated views on the same product)  
+- Price-related features (price distribution)  
+- Category-aware conversion signals (global category-level purchase likelihood)  
+- Additional behavioral patterns (e.g., zero-price ratio, unknown category ratio)  
 
-## 2. Dataset Description
+This step converts variable-length behavioral sequences into fixed-length feature representations suitable for tabular models.
 
-The dataset used in this project is the **REES46 Multi-Category Store E-commerce Behavioral Dataset (October 2019)**.
+### 3. User-Level Aggregation
 
-### Key characteristics:
+We further aggregate user behavior into a structured feature table, including engagement metrics, conversion rates, temporal patterns, diversity features, price statistics, and binary flags.
 
-- ~42 million interaction records  
-- ~3 million unique users  
-- Event types:
-  - view
-  - cart
-  - remove_from_cart
-  - purchase  
+## ⚠️ Data Leakage Handling
 
-### Key columns:
+Some features derived from purchase events (e.g., cart-to-purchase rate, time to first purchase) are excluded during model training to avoid target leakage.
 
-- `user_id`
-- `event_time`
-- `event_type`
-- `product_id`
-- `category_id`
-- `category_code`
-- `brand`
-- `price`
-- `user_session`
+## 🤖 Modeling
 
----
+We train standard tabular models, including Logistic Regression, Random Forest, XGBoost, and MLP. The final model uses a combination of user-level features and event-derived features.
 
-### Why this dataset is suitable
+## 🧪 Reproducibility
 
-- Directly contains **purchase labels**
-- Covers full **user interaction funnel**
-- Includes **temporal information**
-- Large-scale → realistic modeling scenario
+The full pipeline is implemented as standalone Python scripts and is available on GitHub:  
+https://github.com/caiyf03/Ecommerce-purchase-prediction
 
----
+The notebook version provides a structured and explanatory walkthrough, while the script version enables faster execution and reproducibility.
 
-## 3. Event-Level Data Processing
+## 📁 Project Structure
 
-### 3.1 Overview
+The repository is organized into data, scripts, and notebooks. The data folder contains processed datasets, the scripts folder includes feature engineering and modeling code, and the notebooks folder contains analysis and documentation.
 
-The event-level dataset is the **foundation of the pipeline**.  
-Each row represents a single user action, with no aggregation applied.
+## 💡 Key Contributions
 
----
+- Multi-stage pipeline for large-scale behavioral data  
+- Rich feature engineering beyond simple aggregation  
+- Integration of user behavior and category-level signals  
+- Scalable design suitable for real-world e-commerce systems  
 
-### 3.2 Processing Workflow
+## 📌 Future Work
 
-The pipeline includes:
+Future improvements include sequence-based models (e.g., Transformer), session-level prediction, and real-time inference pipelines.
 
-- Timestamp parsing (UTC)
-- Missing value handling:
-  - brand → "unknown"
-  - category_code → "unknown"
-  - category_id → 0
-- Category hierarchy splitting
-- Rare category consolidation (<0.01%)
-- Sorting by `(user_id, event_time)`
+## 📜 License
 
----
-
-### 3.3 Design Considerations
-
-- No aggregation → avoids leakage  
-- Preserves full behavioral sequence  
-- Maintains session integrity  
-
----
-
-## 4. Event-Level Feature Engineering
-
-### 4.1 Motivation
-
-Raw event-level data is not directly suitable for modeling, because:
-
-- Models require **fixed-length inputs**
-- Event data is **variable-length sequences**
-
-Therefore, we construct an intermediate feature table:
-
----
-
-### 4.2 Core Idea
-
-Transform:
-
----
-
-### 4.3 Feature Groups
-
-#### (1) Behavioral Statistics
-
-- total_events  
-- num_products  
-- num_categories  
-- num_sessions  
-
----
-
-#### (2) Temporal Features
-
-- active_duration  
-- mean / std / max delta_time  
-
-→ captures browsing rhythm and activity intensity
-
----
-
-#### (3) Funnel Features
-
-- view_to_cart_rate  
-- cart_to_purchase_rate  
-- purchase_per_event  
-
-→ models conversion behavior
-
----
-
-#### (4) Session Features
-
-- avg_session_len  
-- max_session_len  
-
-→ captures session structure
-
----
-
-#### (5) Purchase Timing Features
-
-- time_to_first_purchase  
-- fast_purchase  
-
-→ measures conversion speed
-
----
-
-#### (6) Category Features
-
-- top_category  
-- entropy  
-
-→ measures user interest diversity
-
----
-
-#### (7) Repeated Interest Features
-
-- avg_repeat_view  
-- max_repeat_view  
-
-→ captures strong intent signals
-
----
-
-#### (8) Price Features
-
-- avg_price  
-- max_price  
-- min_price  
-- std_price  
-
-→ captures price sensitivity
-
----
-
-#### (9) Category-Aware Conversion Features
-
-- category-level conversion rate  
-- smoothed conversion  
-- high-conversion category ratio  
-
-→ integrates **global product popularity**
-
----
-
-#### (10) Additional Features
-
-- zero_price_ratio  
-- unknown_category_ratio  
-
-→ captures noise and anomalies
-
----
-
-### 4.4 Key Insight
-
-This step converts:
-
----
-
-### 4.5 Data Leakage Consideration
-
-Some features use purchase information:
-
-- cart_to_purchase_rate  
-- time_to_first_purchase  
-
-These are **excluded during model training** to avoid target leakage.
-
----
-
-## 5. User-Level Feature Engineering
-
-### 5.1 Overview
-
-The user-level dataset aggregates all events into one row per user.
-
----
-
-### 5.2 Feature Construction
-
-Includes:
-
-- Event counts (views, carts, purchases)
-- Conversion rates (smoothed)
-- Temporal patterns
-- Diversity features
-- Price statistics
-- Binary flags
-
----
-
-### 5.3 Feature Summary
-
-| Feature Type | Description |
-|------|-------------|
-| Event counts | Engagement intensity |
-| Conversion | Funnel efficiency |
-| Temporal | Activity pattern |
-| Diversity | Exploration behavior |
-| Price | Sensitivity |
-| Flags | Simple behavioral signals |
-
----
-
-## 6. Relationship Between Datasets
-
-The pipeline consists of three layers:
-
-- Event-level → raw behavior  
-- Feature table → enriched representation  
-- User-level → model-ready data  
-
----
-
-## 7. Modeling Perspective
-
-### 7.1 Baseline
-
-User-level dataset:
-- Simple aggregation
-- Coarse behavioral signals
-
----
-
-### 7.2 Enhanced Representation
-
-Event-derived features:
-- Temporal dynamics  
-- Session patterns  
-- Conversion behavior  
-
----
-
-### 7.3 Final Input
-
-Final model uses:
-
----
-
-## 8. Engineering Design
-
-### 8.1 Scalability
-
-- Handles 40M+ rows  
-- Uses aggregation pipelines  
-
----
-
-### 8.2 Modularity
-
-- Event processing  
-- Feature engineering  
-- Modeling  
-
----
-
-### 8.3 Reproducibility
-
-- Dataset hosted on Hugging Face  
-- Code available on GitHub  
-
----
-
-## 9. Conclusion
-
-This project demonstrates how large-scale behavioral data can be transformed into meaningful representations for predictive modeling.
-
-Key contributions include:
-
-- A multi-stage data processing pipeline  
-- Rich behavioral feature engineering  
-- Integration of global and user-level signals  
-
-The approach provides a scalable and practical solution for user purchase prediction in real-world e-commerce systems.
+MIT License
