@@ -1,4 +1,4 @@
-# E-Commerce Purchase Prediction Using User Behavioral Data
+# **User-Level Purchase Prediction from E-Commerce Behavioral Logs**
 
 ## 1. Introduction
 
