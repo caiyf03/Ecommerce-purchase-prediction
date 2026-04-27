@@ -81,4 +81,6 @@ Future improvements include sequence-based models (e.g., Transformer), session-l
 
 ## 📜 License
 
-MIT License
+This project is developed as part of CIS 5450 at the University of Pennsylvania.
+
+© 2026 YiFan Cai
